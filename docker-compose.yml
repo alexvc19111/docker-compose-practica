@@ -1,9 +1,7 @@
 version: "3.9"
 
 services:
-  # ──────────────────────────────────────────
   #  BASE DE DATOS
-  # ──────────────────────────────────────────
   postgres:
     image: postgres:15-alpine
     container_name: lab_postgres
@@ -25,9 +23,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ──────────────────────────────────────────
   #  BACKEND (Express)
-  # ──────────────────────────────────────────
   backend:
     build:
       context: ./backend
@@ -52,9 +48,7 @@ services:
     volumes:
       - ./backend/src:/app/src
 
-  # ──────────────────────────────────────────
   #  FRONTEND (React)
-  # ──────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
@@ -70,9 +64,7 @@ services:
     networks:
       - lab_network
 
-# ──────────────────────────────────────────
 #  VOLUMES & NETWORKS
-# ──────────────────────────────────────────
 volumes:
   postgres_data:
 
