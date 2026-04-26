@@ -1,0 +1,81 @@
+version: "3.9"
+
+services:
+  # ──────────────────────────────────────────
+  #  BASE DE DATOS
+  # ──────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: lab_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret123
+      POSTGRES_DB: dockerlab
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - lab_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d dockerlab"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ──────────────────────────────────────────
+  #  BACKEND (Express)
+  # ──────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lab_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: admin
+      DB_PASSWORD: secret123
+      DB_NAME: dockerlab
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lab_network
+    volumes:
+      - ./backend/src:/app/src
+
+  # ──────────────────────────────────────────
+  #  FRONTEND (React)
+  # ──────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lab_frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:4000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - lab_network
+
+# ──────────────────────────────────────────
+#  VOLUMES & NETWORKS
+# ──────────────────────────────────────────
+volumes:
+  postgres_data:
+
+networks:
+  lab_network:
+    driver: bridge
